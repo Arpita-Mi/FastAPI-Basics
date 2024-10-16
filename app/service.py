@@ -13,34 +13,52 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def hash_password(password: str):
     return pwd_context.hash(password)
 
-def create_user(user , db:Session):
-    """
-    Create a new user in the database.
 
-    This function checks if the email is already registered. If not, it 
-    hashes the provided password and saves the new user in the database.
 
-    Parameters:
-    - user: UserCreate - The user data containing email and password.
-    - db: Session - The database session.
+class CrudOperations:
+    def __init__(self, db:Session):
+        self.db = db
 
-    Returns:
-    - User: The newly created user object.
+    def create_user(self, user:UserCreate):
+        db_user = self.db.query(User).filter(User.email == user.email).first()
+        
+        if db_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-    Raises:
-    - HTTPException: If the email is already registered (400).
-    """
-    db_user = db.query(User).filter(User.email == user.email).first()
+        hashed_password = hash_password(user.password)
+        new_user = User(email=user.email, password=hashed_password)
+        self.db.add(new_user)
+        self.db.commit()
+        self.db.refresh(new_user)
+        return new_user
     
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    def get_user(self,user_id:int):
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user
 
-    hashed_password = hash_password(user.password)
-    new_user = User(email=user.email, password=hashed_password)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+    def update_user(self,user_id:int,user:UserCreate):
+        db_user = self.db.query(User).filter(User.id == user_id).first()
+        if not db_user:
+            raise HTTPException(status_code=404, detail={"message": "user not found"})
+        
+
+        if user.email:
+            db_user.email = user.email
+        if user.password:
+            db_user.password = hash_password(user.password)
+
+        self.db.commit()
+        self.db.refresh(db_user)
+        return db_user
 
 
+    def delete_user(self,user_id:int):
+        db_user = self.db.query(User).filter(User.id == user_id).first()
+        if not db_user:
+            raise HTTPException(status_code=404, detail={"message": "user not found"})
 
+        self.db.delete(db_user)
+        self.db.commit()
+        return db_user

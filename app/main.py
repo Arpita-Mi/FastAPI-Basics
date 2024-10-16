@@ -2,20 +2,15 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
-from app.schemas import UserCreate, User as UserResponse
+from app.schemas import UserCreate, UserResponse
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from .service import create_user
+from app.service import CrudOperations
+
 # Create the FastAPI instance
 app = FastAPI()
 
-# Password hashing setup
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def hash_password(password: str):
-    return pwd_context.hash(password)
-
-@app.post("/users/", response_model=UserResponse)
+@app.post("/users/", response_model=dict)
 async def create_user_api(user: UserCreate, db: Session = Depends(get_db)):
     """
     Create a new user.
@@ -29,14 +24,17 @@ async def create_user_api(user: UserCreate, db: Session = Depends(get_db)):
     - db: Session - The database session dependency.
 
     Returns:
-    - UserResponse: The created user object.
-
+    - UserResponse: Successfully created message
     Raises:
     - HTTPException: If there's an error during user creation.
     """
+
     try:
-        new_user = create_user(user, db)
-        return new_user
+        crud = CrudOperations(db)
+        new_user = crud.create_user(user)
+        return {"message" : "New User Created Successfully"}
+    except Exception as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=500 , detail={"message":str(e)})
 
@@ -59,12 +57,63 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
     Raises:
     - HTTPException: If the user is not found (404).
     """
-    breakpoint()
-    print(user_id)
-    print(User.id)
-    user = db.query(User).filter(User.id == user_id).first()
-    print(user)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+    
+    try:
+        crud = CrudOperations(db)
+        user_detail = CrudOperations.get_user(user_id)
+        return user_detail
+    except Exception as e: 
+        raise HTTPException(status_code=500 , detail={"message":str(e)})
+    
+
+@app.put("/update_users/{user_id}",response_model=UserResponse)
+async def update_user_api(user_id : int, user:UserCreate, db:Session=Depends(get_db) ):
+    """
+    Update a user by ID.
+
+    This endpoint allows to update the details based on the details 
+    of user fetched from given user Id and password will be hashed and saved 
+
+    Parameters:
+    - user_id: int - The ID of the user to retrieve.
+    - user: UserCreate - The user details including username and password.
+    - db: Session - The database session dependency.
+
+    Returns:
+    - UserResponse: The updated user object.
+
+    Raises:
+    - HTTPException: If the user is not found (404).
+    """
+    try:
+        crud = CrudOperations(db)
+        user_update = crud.update_user(user_id , user)
+        return user_update
+    except Exception as e:
+        raise HTTPException(status_code=500 , detail={"message":str(e)})
+    
+
+@app.delete("/delete_user/{user_id}", response_model=dict)
+async def delete_user_api(user_id: int, db:Session=Depends(get_db)):
+    """
+    Delete a user by ID.
+
+    This endpoint deletes the user by provided user Id
+
+    Parameters:
+    - user_id: int - The ID of the user to retrieve.
+    - db: Session - The database session dependency.
+
+    Returns:
+    - UserResponse: Successfully deleted message
+
+    Raises:
+    - HTTPException: If the user is not found (404).
+    """
+    try:
+        crud = CrudOperations(db)
+        user_delete = crud.update_user(user_id)
+        return {"message":"user deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500 , detail={"message":str(e)})
 
