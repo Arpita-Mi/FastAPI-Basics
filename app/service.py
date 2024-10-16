@@ -43,7 +43,6 @@ class CrudOperations:
         if not db_user:
             raise HTTPException(status_code=404, detail={"message": "user not found"})
         
-
         if user.email:
             db_user.email = user.email
         if user.password:

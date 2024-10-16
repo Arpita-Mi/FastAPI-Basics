@@ -10,7 +10,7 @@ from app.service import CrudOperations
 # Create the FastAPI instance
 app = FastAPI()
 
-@app.post("/users/", response_model=dict)
+@app.post("/create_user/", response_model=dict)
 async def create_user_api(user: UserCreate, db: Session = Depends(get_db)):
     """
     Create a new user.
@@ -40,7 +40,7 @@ async def create_user_api(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/users/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, db: Session = Depends(get_db)):
+async def get_user_api(user_id: int, db: Session = Depends(get_db)):
     """
     Retrieve a user by ID.
 
@@ -66,7 +66,7 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500 , detail={"message":str(e)})
     
 
-@app.put("/update_users/{user_id}",response_model=UserResponse)
+@app.put("/update_user/{user_id}",response_model=UserResponse)
 async def update_user_api(user_id : int, user:UserCreate, db:Session=Depends(get_db) ):
     """
     Update a user by ID.
