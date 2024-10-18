@@ -37,3 +37,4 @@
 **OR**
 
 **Navigate to open Swagger Docs[http://0.0.0.0:8000/docs](http://0.0.0.0:8000/docs)**
+
